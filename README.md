@@ -2,4 +2,8 @@
 
 [PoolSharks](https://poolsharks.io) is a decentralized on-chain limit order book for Ethereum.
 
-PredaDex is a DEX aggregator which will match users with the best price across multiple liquidity sources including the PoolSharks Orderbook.
+PredaDex is a DEX aggregator from PoolSharks Labs which will match users with the best price across:
+- Uniswap V2
+- Sushiswap
+- Uniswap V3 (coming soon)
+- PoolSharks Orderbook (coming soon)
