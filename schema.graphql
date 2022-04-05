@@ -28,7 +28,8 @@ type Token @entity {
   name: String!
   decimals: BigInt!
 
-  exchanges: [Exchange!]!
+  pairs: [Pair!]!
+  exchanges: [Exchanges!]!
 
   # token specific volume
   tradeVolume: BigDecimal!
@@ -53,7 +54,7 @@ type Token @entity {
 
 type Pair @entity {
   # pool_address for AMMs
-  # tknA_address < tknB_address for PoolSharks Orderbook
+  # contract_address + tknA_address < tknB_address for PoolSharks Orderbook
   id: ID!
 
   # mirrored from the smart contract
