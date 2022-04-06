@@ -8,6 +8,16 @@ type Exchange @entity {
   pairs: [Pair]!
 }
 
+type Observation @entity {
+  #tknA_address < tknB_address
+  id: ID!
+  blockNumber: BigInt!
+  timestamp: BigInt!
+  transactions: [Transactions!]!
+  # tknA/tknB price
+  volumeWeightedAvgPrice: BigInt!
+}
+
 type Token @entity {
   # token address
   id: ID!
