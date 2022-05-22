@@ -12,12 +12,16 @@ const USDT_WETH_PAIR = '0x0d4a11d5eeaac28ec3f61d100daf4d40471f1852' // created b
 
 export function getEthPriceInUSD(): BigDecimal {
   // fetch eth prices for each stablecoin
-  let daiPair = Pair.load(DAI_WETH_PAIR) // dai is token0
-  let usdcPair = Pair.load(USDC_WETH_PAIR) // usdc is token0
-  let usdtPair = Pair.load(USDT_WETH_PAIR) // usdt is token1
+  let loadDaiPair = safeLoadExchangePair(DAI_WETH_PAIR) // dai is token0
+  let loadUsdcPair = safeLoadExchangePair(USDC_WETH_PAIR) // usdc is token0
+  let loadUsdtPair = safeLoadExchangePair(USDT_WETH_PAIR) // usdt is token1
+
+  let daiPair = loadDaiPair.entity
+  let usdcPair = loadUsdcPair.entity
+  let usdtPair = loadUsdtPair.entity
 
   // all 3 have been created
-  if (daiPair !== null && usdcPair !== null && usdtPair !== null) {
+  if (loadDaiPair.exists && loadUsdcPair.exists && loadUsdtPair.exists) {
     let totalLiquidityETH = daiPair.reserve1.plus(usdcPair.reserve1).plus(usdtPair.reserve0)
     let daiWeight = daiPair.reserve1.div(totalLiquidityETH)
     let usdcWeight = usdcPair.reserve1.div(totalLiquidityETH)

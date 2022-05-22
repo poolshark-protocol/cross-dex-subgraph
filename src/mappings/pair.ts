@@ -53,9 +53,14 @@ export function handleSync(event: Sync): void {
   // reset token total liquidity amounts
   token0.totalLiquidity = token0.totalLiquidity.minus(pair.reserve0)
   token1.totalLiquidity = token1.totalLiquidity.minus(pair.reserve1)
+  exchange.totalLiquidityETH = exchange.totalLiquidityETH.minus(pair.reserveETH)
+  exchange.totalLiquidityUSD = exchange.totalLiquidityUSD.minus(pair.reserveUSD)
 
   pair.reserve0 = convertTokenToDecimal(event.params.reserve0, token0.decimals)
   pair.reserve1 = convertTokenToDecimal(event.params.reserve1, token1.decimals)
+
+  pair.updatedAtTimestamp = event.block.timestamp
+  pair.updatedAtBlockNumber = event.block.number
 
   if (pair.reserve1.notEqual(BIGDECIMAL_ZERO)) pair.token0Price = pair.reserve0.div(pair.reserve1)
   else pair.token0Price = BIGDECIMAL_ZERO
@@ -129,10 +134,6 @@ export function handleMint(event: Mint): void {
   let token0Amount = convertTokenToDecimal(event.params.amount0, token0.decimals)
   let token1Amount = convertTokenToDecimal(event.params.amount1, token1.decimals)
 
-  // update txn counts
-  token0.txCount = token0.txCount.plus(BIGINT_ONE)
-  token1.txCount = token1.txCount.plus(BIGINT_ONE)
-
   // get new amounts of USD and ETH for tracking
   let loadBundle = safeLoadBundle('ethUsdPrice')
   if(!loadBundle.exists){
@@ -143,9 +144,6 @@ export function handleMint(event: Mint): void {
     .times(token1Amount)
     .plus(token0.ethPrice.times(token0Amount))
     .times(ethUsdPrice.value)
-
-  // update txn counts
-  pair.txCount = pair.txCount.plus(BIGINT_ONE)
 
   // save entities
   token0.save()
@@ -179,10 +177,6 @@ export function handleBurn(event: Burn): void {
 
   let token0Amount = convertTokenToDecimal(event.params.amount0, token0.decimals)
   let token1Amount = convertTokenToDecimal(event.params.amount1, token1.decimals)
-
-  // update txn counts
-  token0.txCount = token0.txCount.plus(BIGINT_ONE)
-  token1.txCount = token1.txCount.plus(BIGINT_ONE)
 
   // get new amounts of USD and ETH for tracking
   let loadBundle = safeLoadBundle('ethUsdPrice')
@@ -243,6 +237,7 @@ export function handleSwap(event: Swap): void {
   let derivedAmountUSD = derivedAmountETH.times(ethUsdPrice.value)
 
   // only accounts for volume through white listed tokens
+  // TODO: fix
   let trackedAmountUSD = getTrackedVolumeUSD(amount0Total, token0 as Token, amount1Total, token1 as Token, pair as ExchangePair)
 
   let trackedAmountETH: BigDecimal
@@ -260,15 +255,10 @@ export function handleSwap(event: Swap): void {
   token1.tradeVolume = token1.tradeVolume.plus(amount1In.plus(amount1Out))
   token1.tradeVolumeUSD = token1.tradeVolumeUSD.plus(trackedAmountUSD)
 
-  // update txn counts
-  token0.txCount = token0.txCount.plus(BIGINT_ONE)
-  token1.txCount = token1.txCount.plus(BIGINT_ONE)
-
   // update pair volume data, use tracked amount if we have it as its probably more accurate
   pair.volumeUSD = pair.volumeUSD.plus(trackedAmountUSD)
   pair.token0Volume = pair.token0Volume.plus(amount0Total)
   pair.token1Volume = pair.token1Volume.plus(amount1Total)
-  pair.txCount = pair.txCount.plus(BIGINT_ONE)
   pair.save()
 
   // update global values, only used tracked amounts for volume

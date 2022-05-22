@@ -91,10 +91,12 @@ export function safeLoadExchangePair(id: string): LoadExchangePairRet {
         exchangePairEntity.reserveUSD = BIGDECIMAL_ZERO;
 
         exchangePairEntity.volumeUSD = BIGDECIMAL_ZERO;
-        exchangePairEntity.txCount = BIGINT_ZERO
 
         exchangePairEntity.createdAtTimestamp = BIGINT_ZERO;
         exchangePairEntity.createdAtBlockNumber = BIGINT_ZERO;
+
+        exchangePairEntity.updatedAtTimestamp = BIGINT_ZERO;
+        exchangePairEntity.updatedAtBlockNumber = BIGINT_ZERO;
 
         exists = false;
     }
@@ -131,7 +133,6 @@ export function safeLoadToken(id: string): LoadTokenRet {
         tokenEntity.pairs = new Array<string>();
 
         tokenEntity.tradeVolume = BIGDECIMAL_ZERO;
-        tokenEntity.txCount = BIGINT_ZERO;
 
         tokenEntity.totalLiquidity = BIGDECIMAL_ZERO;
 

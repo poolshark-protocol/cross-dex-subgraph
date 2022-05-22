@@ -47,9 +47,6 @@ type Token @entity {
   tradeVolume: BigDecimal!
   tradeVolumeUSD: BigDecimal!
 
-  # transactions across all pairs
-  txCount: BigInt!
-
   # liquidity across all pairs
   totalLiquidity: BigDecimal!
   
@@ -72,19 +69,20 @@ type ExchangePair @entity {
   token0Volume: BigDecimal!
   token1Volume: BigDecimal!
 
-  # derived liquidity
+  # reserves
   reserve0: BigDecimal!
   reserve1: BigDecimal!
   reserveETH: BigDecimal!
   reserveUSD: BigDecimal!
 
-
   volumeUSD: BigDecimal!
-  txCount: BigInt!
 
   # creation stats
   createdAtTimestamp: BigInt!
   createdAtBlockNumber: BigInt!
+  
+  updatedAtTimestamp: BigInt!
+  updatedAtBlockNumber: BigInt!
 
   # list of all swap for the pair
   swaps: [Swap!]!
@@ -114,7 +112,6 @@ type Pair @entity {
   # lifetime volume stats
   token0Volume: BigDecimal!
   token1Volume: BigDecimal!
-  txCount: BigInt!
 
   # list of all swap for the pair
   swaps: [Swap!]! @derivedFrom(field: "pair")
@@ -132,7 +129,8 @@ type Transaction @entity {
 
 
 type Mint @entity {
-  # transaction hash + "-" + index in mints Transaction array
+  # if exists add to values
+  # transaction hash + pair
   id: ID!
   transaction: Transaction!
   timestamp: BigInt! # need this to pull recent txns for specific token or pair
@@ -148,7 +146,8 @@ type Mint @entity {
 }
 
 type Burn @entity {
-  # transaction hash + "-" + index in mints Transaction array
+  # TODO: if exists add to values
+  # transaction hash + pair
   id: ID!
   transaction: Transaction!
   timestamp: BigInt! # need this to pull recent txns for specific token or pair
@@ -166,7 +165,8 @@ type Burn @entity {
 }
 
 type Swap @entity {
-  # transaction hash + "-" + index in Transaction swaps array
+  # if exists add to values
+  # transaction hash + pair + fromToken
   id: ID!
   exchange: Exchange!
   transaction: Transaction!

@@ -45,8 +45,11 @@ export function handleNewUniswapV2Pair(event: PairCreated): void {
 
   pair.token0 = token0.id
   pair.token1 = token1.id
+  pair.exchange = event.address.toHex()
   pair.createdAtTimestamp = event.block.timestamp
   pair.createdAtBlockNumber = event.block.number
+  pair.updatedAtTimestamp = event.block.timestamp
+  pair.updatedAtBlockNumber = event.block.number
 
   // create the tracked contract based on the template
   UniswapV2PairTemplate.create(event.params.pair)
