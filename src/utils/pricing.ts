@@ -1,5 +1,5 @@
 /* eslint-disable prefer-const */
-import { Pair, Token, Bundle } from '../../generated/schema'
+import { Pair, Token, Bundle, ExchangePair } from '../../generated/schema'
 import { BigDecimal, Address, BigInt } from '@graphprotocol/graph-ts/index'
 import { factoryContract, ADDRESS_ZERO, ONE_BD, UNTRACKED_PAIRS } from '../utils/helpers'
 import { FACTORY_ADDRESS, ONE_BI, ZERO_BD, ZERO_BI } from '../utils/helpers'
@@ -119,7 +119,7 @@ export function getTrackedVolumeUSD(
   token0: Token,
   tokenAmount1: BigDecimal,
   token1: Token,
-  pair: Pair
+  pair: ExchangePair
 ): BigDecimal {
   let loadBundle = safeLoadBundle('ethUsdPrice')
   if(!loadBundle.exists){

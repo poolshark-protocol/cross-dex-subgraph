@@ -107,172 +107,214 @@ export function handleSync(event: Sync): void {
   token1.save()
 }
 
-// export function handleMint(event: Mint): void {
-//   let transaction = Transaction.load(event.transaction.hash.toHexString())
+export function handleMint(event: Mint): void {
+  let transaction = Transaction.load(event.transaction.hash.toHexString())
+  
+  let loadPair = safeLoadExchangePair(event.address.toHex())
+  let loadExchange = safeLoadExchange(loadPair.entity.exchange)
+  let loadToken0 = safeLoadToken(loadPair.entity.token0)
+  let loadToken1 = safeLoadToken(loadPair.entity.token1)
 
-//   let pair = ExchangePair.load(event.address.toHex())
-//   let exchange = Exchange.load(pair.exchange)
+  if(!loadPair.exists || !loadExchange.exists || !loadToken0
+    .exists || !loadToken1.exists){
+    //throw some error/warning
+  }
 
-//   let token0 = Token.load(pair.token0)
-//   let token1 = Token.load(pair.token1)
+  let pair = loadPair.entity
+  let exchange = loadExchange.entity
+  let token0 = loadToken0.entity
+  let token1 = loadToken1.entity
 
-//   // update exchange info (except balances, sync will cover that)
-//   let token0Amount = convertTokenToDecimal(event.params.amount0, token0.decimals)
-//   let token1Amount = convertTokenToDecimal(event.params.amount1, token1.decimals)
+  // update exchange info (except balances, sync will cover that)
+  let token0Amount = convertTokenToDecimal(event.params.amount0, token0.decimals)
+  let token1Amount = convertTokenToDecimal(event.params.amount1, token1.decimals)
 
-//   // update txn counts
-//   token0.txCount = token0.txCount.plus(ONE_BI)
-//   token1.txCount = token1.txCount.plus(ONE_BI)
+  // update txn counts
+  token0.txCount = token0.txCount.plus(ONE_BI)
+  token1.txCount = token1.txCount.plus(ONE_BI)
 
-//   // get new amounts of USD and ETH for tracking
-//   let bundle = Bundle.load('1')
-//   let amountTotalUSD = token1.ethPrice
-//     .times(token1Amount)
-//     .plus(token0.ethPrice.times(token0Amount))
-//     .times(bundle.ethUsdPrice)
+  // get new amounts of USD and ETH for tracking
+  let loadBundle = safeLoadBundle('ethUsdPrice')
+  if(!loadBundle.exists){
+    //throw some error
+  }
+  let ethUsdPrice = loadBundle.entity
+  let amountTotalUSD = token1.ethPrice
+    .times(token1Amount)
+    .plus(token0.ethPrice.times(token0Amount))
+    .times(ethUsdPrice.value)
 
-//   // update txn counts
-//   pair.txCount = pair.txCount.plus(ONE_BI)
+  // update txn counts
+  pair.txCount = pair.txCount.plus(ONE_BI)
 
-//   // save entities
-//   token0.save()
-//   token1.save()
-//   pair.save()
-//   exchange.save()
-// }
+  // save entities
+  token0.save()
+  token1.save()
+  pair.save()
+  exchange.save()
+}
 
-// export function handleBurn(event: Burn): void {
-//   let transaction = Transaction.load(event.transaction.hash.toHexString())
+export function handleBurn(event: Burn): void {
+  let transaction = Transaction.load(event.transaction.hash.toHexString())
 
-//   // safety check
-//   if (transaction === null) {
-//     return
-//   }
+  // safety check
+  if (transaction === null) {
+    return
+  }
 
-//   let pair = ExchangePair.load(event.address.toHex())
-//   let exchange = Exchange.load(pair.exchange)
+  let loadPair = safeLoadExchangePair(event.address.toHex())
+  let loadExchange = safeLoadExchange(loadPair.entity.exchange)
+  let loadToken0 = safeLoadToken(loadPair.entity.token0)
+  let loadToken1 = safeLoadToken(loadPair.entity.token1)
 
-//   //update token info
-//   let token0 = Token.load(pair.token0)
-//   let token1 = Token.load(pair.token1)
-//   let token0Amount = convertTokenToDecimal(event.params.amount0, token0.decimals)
-//   let token1Amount = convertTokenToDecimal(event.params.amount1, token1.decimals)
+  if(!loadPair.exists || !loadExchange.exists || !loadToken0
+    .exists || !loadToken1.exists){
+    //throw some error/warning
+  }
 
-//   // update txn counts
-//   token0.txCount = token0.txCount.plus(ONE_BI)
-//   token1.txCount = token1.txCount.plus(ONE_BI)
+  let pair = loadPair.entity
+  let exchange = loadExchange.entity
+  let token0 = loadToken0.entity
+  let token1 = loadToken1.entity
 
-//   // get new amounts of USD and ETH for tracking
-//   let bundle = Bundle.load('1')
-//   let amountTotalUSD = token1.ethPrice
-//     .times(token1Amount)
-//     .plus(token0.ethPrice.times(token0Amount))
-//     .times(bundle.ethUsdPrice)
+  let token0Amount = convertTokenToDecimal(event.params.amount0, token0.decimals)
+  let token1Amount = convertTokenToDecimal(event.params.amount1, token1.decimals)
 
-//   // update global counter and save
-//   token0.save()
-//   token1.save()
-//   pair.save()
-//   exchange.save()
-// }
+  // update txn counts
+  token0.txCount = token0.txCount.plus(ONE_BI)
+  token1.txCount = token1.txCount.plus(ONE_BI)
 
-// export function handleSwap(event: Swap): void {
-//   let pair = ExchangePair.load(event.address.toHexString())
-//   let token0 = Token.load(pair.token0)
-//   let token1 = Token.load(pair.token1)
-//   let amount0In = convertTokenToDecimal(event.params.amount0In, token0.decimals)
-//   let amount1In = convertTokenToDecimal(event.params.amount1In, token1.decimals)
-//   let amount0Out = convertTokenToDecimal(event.params.amount0Out, token0.decimals)
-//   let amount1Out = convertTokenToDecimal(event.params.amount1Out, token1.decimals)
+  // get new amounts of USD and ETH for tracking
+  let loadBundle = safeLoadBundle('ethUsdPrice')
+  if(!loadBundle.exists){
+    //throw some error
+  }
+  let ethUsdPrice = loadBundle.entity
+  let amountTotalUSD = token1.ethPrice
+    .times(token1Amount)
+    .plus(token0.ethPrice.times(token0Amount))
+    .times(ethUsdPrice.value)
 
-//   // totals for volume updates
-//   let amount0Total = amount0Out.plus(amount0In)
-//   let amount1Total = amount1Out.plus(amount1In)
+  // update global counter and save
+  token0.save()
+  token1.save()
+  pair.save()
+  exchange.save()
+}
 
-//   // ETH/USD prices
-//   let bundle = Bundle.load('1')
+export function handleSwap(event: Swap): void {
 
-//   // get total amounts of derived USD and ETH for tracking
-//   let derivedAmountETH = token1.ethPrice
-//     .times(amount1Total)
-//     .plus(token0.ethPrice.times(amount0Total))
-//     .div(BigDecimal.fromString('2'))
-//   let derivedAmountUSD = derivedAmountETH.times(bundle.ethUsdPrice)
+  let loadPair = safeLoadExchangePair(event.address.toHex())
+  let loadExchange = safeLoadExchange(loadPair.entity.exchange)
+  let loadToken0 = safeLoadToken(loadPair.entity.token0)
+  let loadToken1 = safeLoadToken(loadPair.entity.token1)
 
-//   // only accounts for volume through white listed tokens
-//   let trackedAmountUSD = getTrackedVolumeUSD(amount0Total, token0 as Token, amount1Total, token1 as Token, pair as Pair)
+  if(!loadPair.exists || !loadExchange.exists || !loadToken0
+    .exists || !loadToken1.exists){
+    //throw some error/warning
+  }
 
-//   let trackedAmountETH: BigDecimal
-//   if (bundle.ethUsdPrice.equals(ZERO_BD)) {
-//     trackedAmountETH = ZERO_BD
-//   } else {
-//     trackedAmountETH = trackedAmountUSD.div(bundle.ethUsdPrice)
-//   }
+  let pair = loadPair.entity
+  let exchange = loadExchange.entity
+  let token0 = loadToken0.entity
+  let token1 = loadToken1.entity
 
-//   // update token0 global volume and token liquidity stats
-//   token0.tradeVolume = token0.tradeVolume.plus(amount0In.plus(amount0Out))
-//   token0.tradeVolumeUSD = token0.tradeVolumeUSD.plus(trackedAmountUSD)
+  let amount0In = convertTokenToDecimal(event.params.amount0In, token0.decimals)
+  let amount1In = convertTokenToDecimal(event.params.amount1In, token1.decimals)
+  let amount0Out = convertTokenToDecimal(event.params.amount0Out, token0.decimals)
+  let amount1Out = convertTokenToDecimal(event.params.amount1Out, token1.decimals)
 
-//   // update token1 global volume and token liquidity stats
-//   token1.tradeVolume = token1.tradeVolume.plus(amount1In.plus(amount1Out))
-//   token1.tradeVolumeUSD = token1.tradeVolumeUSD.plus(trackedAmountUSD)
+  // totals for volume updates
+  let amount0Total = amount0Out.plus(amount0In)
+  let amount1Total = amount1Out.plus(amount1In)
 
-//   // update txn counts
-//   token0.txCount = token0.txCount.plus(ONE_BI)
-//   token1.txCount = token1.txCount.plus(ONE_BI)
+  // ETH/USD prices
+  let loadBundle = safeLoadBundle('ethUsdPrice')
+  if(!loadBundle.exists){
+    //throw some error
+  }
+  let ethUsdPrice = loadBundle.entity
 
-//   // update pair volume data, use tracked amount if we have it as its probably more accurate
-//   pair.volumeUSD = pair.volumeUSD.plus(trackedAmountUSD)
-//   pair.token0Volume = pair.token0Volume.plus(amount0Total)
-//   pair.token1Volume = pair.token1Volume.plus(amount1Total)
-//   pair.txCount = pair.txCount.plus(ONE_BI)
-//   pair.save()
+  // get total amounts of derived USD and ETH for tracking
+  let derivedAmountETH = token1.ethPrice
+    .times(amount1Total)
+    .plus(token0.ethPrice.times(amount0Total))
+    .div(BigDecimal.fromString('2'))
+  let derivedAmountUSD = derivedAmountETH.times(ethUsdPrice.value)
 
-//   // update global values, only used tracked amounts for volume
-//   let exchange = Exchange.load(pair.exchange)
-//   exchange.totalVolumeUSD = exchange.totalVolumeUSD.plus(trackedAmountUSD)
-//   exchange.totalVolumeETH = exchange.totalVolumeETH.plus(trackedAmountETH)
+  // only accounts for volume through white listed tokens
+  let trackedAmountUSD = getTrackedVolumeUSD(amount0Total, token0 as Token, amount1Total, token1 as Token, pair as ExchangePair)
 
-//   // save entities
-//   pair.save()
-//   token0.save()
-//   token1.save()
-//   exchange.save()
+  let trackedAmountETH: BigDecimal
+  if (ethUsdPrice.value.equals(ZERO_BD)) {
+    trackedAmountETH = ZERO_BD
+  } else {
+    trackedAmountETH = trackedAmountUSD.div(ethUsdPrice.value)
+  }
 
-//   let transaction = Transaction.load(event.transaction.hash.toHexString())
-//   if (transaction === null) {
-//     transaction = new Transaction(event.transaction.hash.toHexString())
-//     transaction.blockNumber = event.block.number
-//     transaction.timestamp = event.block.timestamp
-//     transaction.mints = []
-//     transaction.swaps = []
-//     transaction.burns = []
-//   }
-//   let swaps = transaction.swaps
-//   let swap = new SwapEvent(event.transaction.hash.toHex().concat(event.address.toHex()))
+  // update token0 global volume and token liquidity stats
+  token0.tradeVolume = token0.tradeVolume.plus(amount0In.plus(amount0Out))
+  token0.tradeVolumeUSD = token0.tradeVolumeUSD.plus(trackedAmountUSD)
 
-//   // update swap event
-//   swap.transaction = transaction.id
-//   swap.pair = pair.id
-//   swap.timestamp = transaction.timestamp
-//   swap.transaction = transaction.id
-//   swap.sender = event.params.sender
-//   swap.amount0In = amount0In
-//   swap.amount1In = amount1In
-//   swap.amount0Out = amount0Out
-//   swap.amount1Out = amount1Out
-//   swap.to = event.params.to
-//   swap.from = event.transaction.from
-//   swap.logIndex = event.logIndex
-//   // use the tracked amount if we have it
-//   swap.amountUSD = trackedAmountUSD === ZERO_BD ? derivedAmountUSD : trackedAmountUSD
-//   swap.save()
+  // update token1 global volume and token liquidity stats
+  token1.tradeVolume = token1.tradeVolume.plus(amount1In.plus(amount1Out))
+  token1.tradeVolumeUSD = token1.tradeVolumeUSD.plus(trackedAmountUSD)
 
-//   // update the transaction
+  // update txn counts
+  token0.txCount = token0.txCount.plus(ONE_BI)
+  token1.txCount = token1.txCount.plus(ONE_BI)
 
-//   // TODO: Consider using .concat() for handling array updates to protect
-//   // against unintended side effects for other code paths.
-//   swaps.push(swap.id)
-//   transaction.swaps = swaps
-//   transaction.save()
-// }
+  // update pair volume data, use tracked amount if we have it as its probably more accurate
+  pair.volumeUSD = pair.volumeUSD.plus(trackedAmountUSD)
+  pair.token0Volume = pair.token0Volume.plus(amount0Total)
+  pair.token1Volume = pair.token1Volume.plus(amount1Total)
+  pair.txCount = pair.txCount.plus(ONE_BI)
+  pair.save()
+
+  // update global values, only used tracked amounts for volume
+  exchange.totalVolumeUSD = exchange.totalVolumeUSD.plus(trackedAmountUSD)
+  exchange.totalVolumeETH = exchange.totalVolumeETH.plus(trackedAmountETH)
+
+  // save entities
+  pair.save()
+  token0.save()
+  token1.save()
+  exchange.save()
+
+  let transaction = Transaction.load(event.transaction.hash.toHexString())
+  if (transaction === null) {
+    transaction = new Transaction(event.transaction.hash.toHexString())
+    transaction.blockNumber = event.block.number
+    transaction.timestamp = event.block.timestamp
+    transaction.mints = []
+    transaction.swaps = []
+    transaction.burns = []
+  }
+  let swaps = transaction.swaps
+  let swap = new SwapEvent(event.transaction.hash.toHex().concat(event.address.toHex()))
+
+  // update swap event
+  swap.transaction = transaction.id
+  swap.pair = pair.id
+  swap.timestamp = transaction.timestamp
+  swap.transaction = transaction.id
+  swap.sender = event.params.sender
+  swap.amount0In = amount0In
+  swap.amount1In = amount1In
+  swap.amount0Out = amount0Out
+  swap.amount1Out = amount1Out
+  swap.to = event.params.to
+  swap.from = event.transaction.from
+  swap.logIndex = event.logIndex
+  // use the tracked amount if we have it
+  swap.amountUSD = trackedAmountUSD === ZERO_BD ? derivedAmountUSD : trackedAmountUSD
+  swap.save()
+
+  // update the transaction
+
+  // TODO: Consider using .concat() for handling array updates to protect
+  // against unintended side effects for other code paths.
+  swaps.push(swap.id)
+  transaction.swaps = swaps
+  transaction.save()
+}
