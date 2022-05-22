@@ -9,7 +9,7 @@ import {
   Pair,
   Token
 } from "../../generated/schema"
-import { ADDRESS_ZERO, fetchTokenDecimals, fetchTokenName, fetchTokenSymbol } from "./helpers";
+import { ADDRESS_ZERO, BIGDECIMAL_ZERO, BIGINT_ZERO, fetchTokenDecimals, fetchTokenName, fetchTokenSymbol } from "./helpers";
 
 class LoadBundleRet {
     entity: Bundle;
@@ -23,7 +23,7 @@ export function safeLoadBundle(id: string): LoadBundleRet {
     if (!bundleEntity) {
         bundleEntity = new Bundle(id);
 
-        bundleEntity.value = BigDecimal.fromString("0.0");
+        bundleEntity.value = BIGDECIMAL_ZERO;
         
         exists = false;
     }
@@ -47,10 +47,10 @@ export function safeLoadExchange(id: string): LoadExchangeRet {
     if (!exchangeEntity) {
         exchangeEntity = new Exchange(id);
 
-        exchangeEntity.totalLiquidityETH = BigDecimal.fromString("0.0");
-        exchangeEntity.totalLiquidityUSD = BigDecimal.fromString("0.0");
-        exchangeEntity.totalVolumeETH = BigDecimal.fromString("0.0");
-        exchangeEntity.totalLiquidityUSD = BigDecimal.fromString("0.0");
+        exchangeEntity.totalLiquidityETH = BIGDECIMAL_ZERO;
+        exchangeEntity.totalLiquidityUSD = BIGDECIMAL_ZERO;
+        exchangeEntity.totalVolumeETH = BIGDECIMAL_ZERO;
+        exchangeEntity.totalLiquidityUSD = BIGDECIMAL_ZERO;
         exchangeEntity.pairCount = 0;
         exchangeEntity.pairs = new Array<string>();
 
@@ -80,21 +80,21 @@ export function safeLoadExchangePair(id: string): LoadExchangePairRet {
 
         exchangePairEntity.token0 = ADDRESS_ZERO;
         exchangePairEntity.token1 = ADDRESS_ZERO;
-        exchangePairEntity.token0Price = BigDecimal.fromString("0.0");
-        exchangePairEntity.token1Price = BigDecimal.fromString("0.0");
-        exchangePairEntity.token0Volume = BigDecimal.fromString("0.0");
-        exchangePairEntity.token1Volume = BigDecimal.fromString("0.0");
+        exchangePairEntity.token0Price = BIGDECIMAL_ZERO;
+        exchangePairEntity.token1Price = BIGDECIMAL_ZERO;
+        exchangePairEntity.token0Volume = BIGDECIMAL_ZERO;
+        exchangePairEntity.token1Volume = BIGDECIMAL_ZERO;
 
-        exchangePairEntity.reserve0 = BigDecimal.fromString("0.0");
-        exchangePairEntity.reserve1 = BigDecimal.fromString("0.0");
-        exchangePairEntity.reserveETH = BigDecimal.fromString("0.0");
-        exchangePairEntity.reserveUSD = BigDecimal.fromString("0.0");
+        exchangePairEntity.reserve0 = BIGDECIMAL_ZERO;
+        exchangePairEntity.reserve1 = BIGDECIMAL_ZERO;
+        exchangePairEntity.reserveETH = BIGDECIMAL_ZERO;
+        exchangePairEntity.reserveUSD = BIGDECIMAL_ZERO;
 
-        exchangePairEntity.volumeUSD = BigDecimal.fromString("0.0");
-        exchangePairEntity.txCount = BigInt.fromI32(0);
+        exchangePairEntity.volumeUSD = BIGDECIMAL_ZERO;
+        exchangePairEntity.txCount = BIGINT_ZERO
 
-        exchangePairEntity.createdAtTimestamp = BigInt.fromI32(0);
-        exchangePairEntity.createdAtBlockNumber = BigInt.fromI32(0);
+        exchangePairEntity.createdAtTimestamp = BIGINT_ZERO;
+        exchangePairEntity.createdAtBlockNumber = BIGINT_ZERO;
 
         exists = false;
     }
@@ -123,13 +123,17 @@ export function safeLoadToken(id: string): LoadTokenRet {
         tokenEntity.name = fetchTokenName(tokenAddress)
         tokenEntity.decimals = fetchTokenDecimals(tokenAddress)
 
-        tokenEntity.ethPrice = BigDecimal.fromString("0.0");
+        if (tokenEntity.decimals.equals(BIGINT_ZERO)) {
+            //TODO: throw an error
+        }
+
+        tokenEntity.ethPrice = BIGDECIMAL_ZERO;
         tokenEntity.pairs = new Array<string>();
 
-        tokenEntity.tradeVolume = BigDecimal.fromString("0.0");
-        tokenEntity.txCount = BigInt.fromI32(0);
+        tokenEntity.tradeVolume = BIGDECIMAL_ZERO;
+        tokenEntity.txCount = BIGINT_ZERO;
 
-        tokenEntity.totalLiquidity = BigDecimal.fromString("0.0");
+        tokenEntity.totalLiquidity = BIGDECIMAL_ZERO;
 
         exists = false;
     }

@@ -1,8 +1,8 @@
 /* eslint-disable prefer-const */
 import { Pair, Token, Bundle, ExchangePair } from '../../generated/schema'
 import { BigDecimal, Address, BigInt } from '@graphprotocol/graph-ts/index'
-import { factoryContract, ADDRESS_ZERO, ONE_BD, UNTRACKED_PAIRS } from '../utils/helpers'
-import { FACTORY_ADDRESS, ONE_BI, ZERO_BD, ZERO_BI } from '../utils/helpers'
+import { factoryContract, ADDRESS_ZERO, BIGDECIMAL_ONE, UNTRACKED_PAIRS } from '../utils/helpers'
+import { FACTORY_ADDRESS, BIGINT_ONE, BIGDECIMAL_ZERO, BIGINT_ZERO } from '../utils/helpers'
 import { safeLoadBundle, safeLoadExchangePair, safeLoadToken } from './loads'
 
 const WETH_ADDRESS = '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2'
@@ -36,7 +36,7 @@ export function getEthPriceInUSD(): BigDecimal {
   } else if (usdcPair !== null) {
     return usdcPair.token0Price
   } else {
-    return ZERO_BD
+    return BIGDECIMAL_ZERO
   }
 }
 
@@ -76,7 +76,7 @@ let MINIMUM_LIQUIDITY_THRESHOLD_ETH = BigDecimal.fromString('2')
  **/
 export function findEthPerToken(token: Token): BigDecimal {
   if (token.id == WETH_ADDRESS) {
-    return ONE_BD
+    return BIGDECIMAL_ONE
   }
   // loop through whitelist and check if paired with any
   for (let i = 0; i < WHITELIST.length; ++i) {
@@ -105,7 +105,7 @@ export function findEthPerToken(token: Token): BigDecimal {
       }
     }
   }
-  return ZERO_BD // nothing was found return 0
+  return BIGDECIMAL_ZERO // nothing was found return 0
 }
 
 /**
@@ -131,24 +131,24 @@ export function getTrackedVolumeUSD(
 
   // dont count tracked volume on these pairs - usually rebass tokens
   if (UNTRACKED_PAIRS.includes(pair.id)) {
-    return ZERO_BD
+    return BIGDECIMAL_ZERO
   }
 
   let reserve0USD = pair.reserve0.times(price0)
   let reserve1USD = pair.reserve1.times(price1)
   if (WHITELIST.includes(token0.id) && WHITELIST.includes(token1.id)) {
       if (reserve0USD.plus(reserve1USD).lt(MINIMUM_USD_THRESHOLD_NEW_PAIRS)) {
-      return ZERO_BD
+      return BIGDECIMAL_ZERO
       }
   }
   if (WHITELIST.includes(token0.id) && !WHITELIST.includes(token1.id)) {
       if (reserve0USD.times(BigDecimal.fromString('2')).lt(MINIMUM_USD_THRESHOLD_NEW_PAIRS)) {
-      return ZERO_BD
+      return BIGDECIMAL_ZERO
       }
   }
   if (!WHITELIST.includes(token0.id) && WHITELIST.includes(token1.id)) {
       if (reserve1USD.times(BigDecimal.fromString('2')).lt(MINIMUM_USD_THRESHOLD_NEW_PAIRS)) {
-      return ZERO_BD
+      return BIGDECIMAL_ZERO
       }
   }
 
@@ -171,7 +171,7 @@ export function getTrackedVolumeUSD(
   }
 
   // neither token is on white list, tracked volume is 0
-  return ZERO_BD
+  return BIGDECIMAL_ZERO
 }
 
 /**
@@ -210,5 +210,5 @@ export function getTrackedLiquidityUSD(
   }
 
   // neither token is on white list, tracked volume is 0
-  return ZERO_BD
+  return BIGDECIMAL_ZERO
 }

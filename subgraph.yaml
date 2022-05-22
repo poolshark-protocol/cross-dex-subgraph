@@ -33,7 +33,7 @@ dataSources:
           file: ./abis/ERC20NameBytes.json
       eventHandlers:
         - event: PairCreated(indexed address,indexed address,address,uint256)
-          handler: handleNewPair
+          handler: handleNewUniswapV2Pair
   # Sushiswap
   # - kind: ethereum/contract
   #   name: Factory
@@ -69,7 +69,7 @@ dataSources:
 templates:
   # Uniswap V2
   - kind: ethereum/contract
-    name: Pair
+    name: UniswapV2Pair
     network: mainnet
     source:
       abi: Pair
@@ -93,8 +93,6 @@ templates:
           handler: handleBurn
         - event: Swap(indexed address,uint256,uint256,uint256,uint256,indexed address)
           handler: handleSwap
-        - event: Transfer(indexed address,indexed address,uint256)
-          handler: handleTransfer
         - event: Sync(uint112,uint112)
           handler: handleSync
   # # Sushiswap
