@@ -5,8 +5,8 @@ type Exchange @entity {
   totalLiquidityETH: BigDecimal!
   totalLiquidityUSD: BigDecimal!
 
-  totalVolumeETH: BigDecimal!
-  totalVolumeUSD: BigDecimal!
+  #totalVolumeETH: BigDecimal!
+  #totalVolumeUSD: BigDecimal!
 
   # pair info
   pairCount: Int!
@@ -44,8 +44,8 @@ type Token @entity {
   pairs: [Pair!]!
 
   # token specific volume
-  tradeVolume: BigDecimal!
-  tradeVolumeUSD: BigDecimal!
+  #tradeVolume: BigDecimal!
+  #tradeVolumeUSD: BigDecimal!
 
   # liquidity across all pairs
   totalLiquidity: BigDecimal!
@@ -66,8 +66,8 @@ type ExchangePair @entity {
   token1Price: BigDecimal!
 
   # lifetime volume stats
-  token0Volume: BigDecimal!
-  token1Volume: BigDecimal!
+  #token0Volume: BigDecimal!
+  #token1Volume: BigDecimal!
 
   # reserves
   reserve0: BigDecimal!
@@ -75,7 +75,9 @@ type ExchangePair @entity {
   reserveETH: BigDecimal!
   reserveUSD: BigDecimal!
 
-  volumeUSD: BigDecimal!
+  trackedReserveETH: BigDecimal!
+
+  #volumeUSD: BigDecimal!
 
   # creation stats
   createdAtTimestamp: BigInt!
@@ -127,7 +129,7 @@ type Transaction @entity {
   swaps: [Swap!]!
 }
 
-
+# calculate reserve changes to create Mint
 type Mint @entity {
   # if exists add to values
   # transaction hash + pair
@@ -145,6 +147,7 @@ type Mint @entity {
   amountUSD: BigDecimal
 }
 
+# calculate reserve changes to create Burn
 type Burn @entity {
   # TODO: if exists add to values
   # transaction hash + pair
@@ -164,6 +167,7 @@ type Burn @entity {
 
 }
 
+# calculate swap amount and volume based on reserve changes
 type Swap @entity {
   # if exists add to values
   # transaction hash + pair + fromToken

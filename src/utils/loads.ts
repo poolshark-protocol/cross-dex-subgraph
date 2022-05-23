@@ -49,7 +49,7 @@ export function safeLoadExchange(id: string): LoadExchangeRet {
 
         exchangeEntity.totalLiquidityETH = BIGDECIMAL_ZERO;
         exchangeEntity.totalLiquidityUSD = BIGDECIMAL_ZERO;
-        exchangeEntity.totalVolumeETH = BIGDECIMAL_ZERO;
+        //exchangeEntity.totalVolumeETH = BIGDECIMAL_ZERO;
         exchangeEntity.totalLiquidityUSD = BIGDECIMAL_ZERO;
         exchangeEntity.pairCount = 0;
         exchangeEntity.pairs = new Array<string>();
@@ -82,15 +82,15 @@ export function safeLoadExchangePair(id: string): LoadExchangePairRet {
         exchangePairEntity.token1 = ADDRESS_ZERO;
         exchangePairEntity.token0Price = BIGDECIMAL_ZERO;
         exchangePairEntity.token1Price = BIGDECIMAL_ZERO;
-        exchangePairEntity.token0Volume = BIGDECIMAL_ZERO;
-        exchangePairEntity.token1Volume = BIGDECIMAL_ZERO;
+        // exchangePairEntity.token0Volume = BIGDECIMAL_ZERO;
+        // exchangePairEntity.token1Volume = BIGDECIMAL_ZERO;
 
         exchangePairEntity.reserve0 = BIGDECIMAL_ZERO;
         exchangePairEntity.reserve1 = BIGDECIMAL_ZERO;
         exchangePairEntity.reserveETH = BIGDECIMAL_ZERO;
         exchangePairEntity.reserveUSD = BIGDECIMAL_ZERO;
-
-        exchangePairEntity.volumeUSD = BIGDECIMAL_ZERO;
+        exchangePairEntity.trackedReserveETH = BIGDECIMAL_ZERO;
+        //exchangePairEntity.volumeUSD = BIGDECIMAL_ZERO;
 
         exchangePairEntity.createdAtTimestamp = BIGINT_ZERO;
         exchangePairEntity.createdAtBlockNumber = BIGINT_ZERO;
@@ -132,7 +132,7 @@ export function safeLoadToken(id: string): LoadTokenRet {
         tokenEntity.ethPrice = BIGDECIMAL_ZERO;
         tokenEntity.pairs = new Array<string>();
 
-        tokenEntity.tradeVolume = BIGDECIMAL_ZERO;
+        //tokenEntity.tradeVolume = BIGDECIMAL_ZERO;
 
         tokenEntity.totalLiquidity = BIGDECIMAL_ZERO;
 

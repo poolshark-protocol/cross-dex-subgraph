@@ -22,22 +22,22 @@ export function getEthPriceInUSD(): BigDecimal {
 
   // all 3 have been created
   if (loadDaiPair.exists && loadUsdcPair.exists && loadUsdtPair.exists) {
-    let totalLiquidityETH = daiPair.reserve1.plus(usdcPair.reserve1).plus(usdtPair.reserve0)
-    let daiWeight = daiPair.reserve1.div(totalLiquidityETH)
-    let usdcWeight = usdcPair.reserve1.div(totalLiquidityETH)
-    let usdtWeight = usdtPair.reserve0.div(totalLiquidityETH)
+    let totalLiquidityStables = daiPair.reserve1.plus(usdcPair.reserve1).plus(usdtPair.reserve0)
+    let daiWeight = daiPair.reserve1.div(totalLiquidityStables)
+    let usdcWeight = usdcPair.reserve1.div(totalLiquidityStables)
+    let usdtWeight = usdtPair.reserve0.div(totalLiquidityStables)
     return daiPair.token0Price
       .times(daiWeight)
       .plus(usdcPair.token0Price.times(usdcWeight))
       .plus(usdtPair.token1Price.times(usdtWeight))
     // dai and USDC have been created
-  } else if (daiPair !== null && usdcPair !== null) {
+  } else if (loadDaiPair.exists && loadUsdcPair.exists) {
     let totalLiquidityETH = daiPair.reserve1.plus(usdcPair.reserve1)
     let daiWeight = daiPair.reserve1.div(totalLiquidityETH)
     let usdcWeight = usdcPair.reserve1.div(totalLiquidityETH)
     return daiPair.token0Price.times(daiWeight).plus(usdcPair.token0Price.times(usdcWeight))
     // USDC is the only pair so far
-  } else if (usdcPair !== null) {
+  } else if (loadUsdcPair.exists) {
     return usdcPair.token0Price
   } else {
     return BIGDECIMAL_ZERO
@@ -194,9 +194,9 @@ export function getTrackedLiquidityUSD(
   if(!loadBundle.exists){
     //throw some error
   }
-  let bundle = loadBundle.entity
-  let price0 = token0.ethPrice.times(bundle.value)
-  let price1 = token1.ethPrice.times(bundle.value)
+  let ethUsdPrice = loadBundle.entity
+  let price0 = token0.ethPrice.times(ethUsdPrice.value)
+  let price1 = token1.ethPrice.times(ethUsdPrice.value)
 
   // both are whitelist tokens, take average of both amounts
   if (WHITELIST.includes(token0.id) && WHITELIST.includes(token1.id)) {
