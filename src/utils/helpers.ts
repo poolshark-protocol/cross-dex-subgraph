@@ -1,9 +1,9 @@
 /* eslint-disable prefer-const */
 import { log, BigInt, BigDecimal, Address } from '@graphprotocol/graph-ts'
-import { ERC20 } from '../../generated/Factory/ERC20'
-import { ERC20SymbolBytes } from '../../generated/Factory/ERC20SymbolBytes'
-import { ERC20NameBytes } from '../../generated/Factory/ERC20NameBytes'
-import { Factory as FactoryContract } from '../../generated/Factory/Factory'
+import { ERC20 } from '../../generated/UniswapV2Factory/ERC20'
+import { ERC20SymbolBytes } from '../../generated/UniswapV2Factory/ERC20SymbolBytes'
+import { ERC20NameBytes } from '../../generated/UniswapV2Factory/ERC20NameBytes'
+import { Factory as FactoryContract } from '../../generated/UniswapV2Factory/Factory'
 
 export const ADDRESS_ZERO = '0x0000000000000000000000000000000000000000'
 export const FACTORY_ADDRESS = '0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f'
@@ -15,6 +15,7 @@ export let BIGINT_ZERO = BigInt.fromI32(0)
 export let BIGINT_ONE = BigInt.fromI32(1)
 export let BIGDECIMAL_ZERO = BigDecimal.fromString('0')
 export let BIGDECIMAL_ONE = BigDecimal.fromString('1')
+export let BIGDECIMAL_ONE_PERCENT = BigDecimal.fromString('0.01')
 export let BIGINT_18 = BigInt.fromI32(18)
 
 export let factoryContract = FactoryContract.bind(Address.fromString(FACTORY_ADDRESS))

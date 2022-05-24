@@ -40,8 +40,10 @@ type Token @entity {
 
   # price
   ethPrice: BigDecimal!
+  usdPrice: BigDecimal!
   
   pairs: [Pair!]!
+  exchangeTokens: [ExchangeToken!]!
 
   # token specific volume
   #tradeVolume: BigDecimal!
@@ -49,7 +51,8 @@ type Token @entity {
 
   # liquidity across all pairs
   totalLiquidity: BigDecimal!
-  
+  #totalLiquidityETH: BigDecimal!
+  #totalLiquidityUSD: BigDecimal!
 }
 
 type ExchangePair @entity {
@@ -75,6 +78,9 @@ type ExchangePair @entity {
   reserveETH: BigDecimal!
   reserveUSD: BigDecimal!
 
+  twoPercentMarketDepthETH: BigDecimal!
+  twoPercentMarketDepthUSD: BigDecimal!
+
   trackedReserveETH: BigDecimal!
 
   #volumeUSD: BigDecimal!
@@ -88,6 +94,29 @@ type ExchangePair @entity {
 
   # list of all swap for the pair
   swaps: [Swap!]!
+}
+
+type ExchangeToken @entity {
+  # token address + factory address
+  id: ID!
+
+  # mirrored from the smart contract
+  symbol: String!
+  name: String!
+  decimals: BigInt!
+
+  # price
+  ethPrice: BigDecimal!
+  
+  exchangePairs: [ExchangePair!]!
+
+  # token specific volume
+  #tradeVolume: BigDecimal!
+  #tradeVolumeUSD: BigDecimal!
+
+  # liquidity across all pairs
+  totalLiquidity: BigDecimal!
+  
 }
 
 
@@ -112,11 +141,15 @@ type Pair @entity {
   token1Price: BigDecimal!
 
   # lifetime volume stats
-  token0Volume: BigDecimal!
-  token1Volume: BigDecimal!
+  # token0Volume: BigDecimal!
+  # token1Volume: BigDecimal!
 
-  # list of all swap for the pair
-  swaps: [Swap!]! @derivedFrom(field: "pair")
+    # creation stats
+  createdAtTimestamp: BigInt!
+  createdAtBlockNumber: BigInt!
+  
+  updatedAtTimestamp: BigInt!
+  updatedAtBlockNumber: BigInt!
 }
 
 type Transaction @entity {

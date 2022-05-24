@@ -78,7 +78,75 @@ let MINIMUM_LIQUIDITY_THRESHOLD_ETH = BigDecimal.fromString('2')
  * Search through graph to find derived Eth per token.
  * @todo update to be derived ETH (add stablecoin estimates)
  **/
-export function findEthPerToken(token: Token): BigDecimal {
+ export function findEthPerToken(token: Token): BigDecimal {
+  if (token.id == WETH_ADDRESS) {
+    return BIGDECIMAL_ONE
+  }
+  // loop through whitelist and check if paired with any
+  for (let i = 0; i < WHITELIST.length; ++i) {
+    let pairAddress = factoryContract.getPair(Address.fromString(token.id), Address.fromString(WHITELIST[i]))
+    if (pairAddress.toHexString() != ADDRESS_ZERO) {
+      let loadPair = safeLoadExchangePair(pairAddress.toHexString())
+      if(!loadPair.exists){
+        //throw some error
+      }
+      let pair = loadPair.entity
+      if (pair.token0 == token.id && pair.reserveETH.gt(MINIMUM_LIQUIDITY_THRESHOLD_ETH)) {
+        let loadToken1 = safeLoadToken(pair.token1)
+        if(!loadToken1.exists){
+          //throw some error
+        }
+        let token1 = loadToken1.entity
+        return pair.token1Price.times(token1.ethPrice as BigDecimal) // return token1 per our token * Eth per token 1
+      }
+      if (pair.token1 == token.id && pair.reserveETH.gt(MINIMUM_LIQUIDITY_THRESHOLD_ETH)) {
+        let loadToken0 = safeLoadToken(pair.token0)
+        if(!loadToken0.exists){
+          //throw some error
+        }
+        let token0 = loadToken0.entity
+        return pair.token0Price.times(token0.ethPrice as BigDecimal) // return token0 per our token * ETH per token 0
+      }
+    }
+  }
+  return BIGDECIMAL_ZERO // nothing was found return 0
+}
+
+export function findEthPerExchangeToken(token: Token): BigDecimal {
+  if (token.id == WETH_ADDRESS) {
+    return BIGDECIMAL_ONE
+  }
+  // loop through whitelist and check if paired with any
+  for (let i = 0; i < WHITELIST.length; ++i) {
+    let pairAddress = factoryContract.getPair(Address.fromString(token.id), Address.fromString(WHITELIST[i]))
+    if (pairAddress.toHexString() != ADDRESS_ZERO) {
+      let loadPair = safeLoadExchangePair(pairAddress.toHexString())
+      if(!loadPair.exists){
+        //throw some error
+      }
+      let pair = loadPair.entity
+      if (pair.token0 == token.id && pair.reserveETH.gt(MINIMUM_LIQUIDITY_THRESHOLD_ETH)) {
+        let loadToken1 = safeLoadToken(pair.token1)
+        if(!loadToken1.exists){
+          //throw some error
+        }
+        let token1 = loadToken1.entity
+        return pair.token1Price.times(token1.ethPrice as BigDecimal) // return token1 per our token * Eth per token 1
+      }
+      if (pair.token1 == token.id && pair.reserveETH.gt(MINIMUM_LIQUIDITY_THRESHOLD_ETH)) {
+        let loadToken0 = safeLoadToken(pair.token0)
+        if(!loadToken0.exists){
+          //throw some error
+        }
+        let token0 = loadToken0.entity
+        return pair.token0Price.times(token0.ethPrice as BigDecimal) // return token0 per our token * ETH per token 0
+      }
+    }
+  }
+  return BIGDECIMAL_ZERO // nothing was found return 0
+}
+
+export function findUsdPerExchangeToken(token: Token): BigDecimal {
   if (token.id == WETH_ADDRESS) {
     return BIGDECIMAL_ONE
   }
