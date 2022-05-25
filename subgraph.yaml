@@ -22,6 +22,9 @@ dataSources:
       entities:
         - Pair
         - Token
+        - ExchangePair
+        - ExchangeToken
+        - Bundle
       abis:
         - name: Factory
           file: ./abis/factory.json
@@ -79,6 +82,8 @@ templates:
         - ExchangeToken
         - ExchangePair
         - Token
+        - Pair
+        - Bundle
       abis:
         - name: Pair
           file: ./abis/pair.json

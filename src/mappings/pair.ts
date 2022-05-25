@@ -96,7 +96,7 @@ export function updateEthUsdPrice(): BigDecimal {
   return ethUsdPrice.value
 }
 
-export function updateEthBasedPrices(token0: Token, token1: Token, pair: ExchangePair, exchange: Exchange, ethUsdPrice: BigDecimal): void {
+export function updateEthBasedPrices(token0: Token, token1: Token, exPair: ExchangePair, exchange: Exchange, ethUsdPrice: BigDecimal): void {
   token0.ethPrice = findEthPerExchangeToken(token0 as Token)
   token1.ethPrice = findEthPerExchangeToken(token1 as Token)
   ///get exchange tokens and update prices
@@ -106,13 +106,13 @@ export function updateEthBasedPrices(token0: Token, token1: Token, pair: Exchang
   token0.save()
   token1.save()
 
-  pair.twoPercentMarketDepthETH = pair.reserve1.times(BIGDECIMAL_ONE_PERCENT).times(token1.ethPrice)
-  pair.twoPercentMarketDepthUSD = pair.twoPercentMarketDepthETH.times(ethUsdPrice)
+  exPair.twoPercentMarketDepthETH = exPair.reserve1.times(BIGDECIMAL_ONE_PERCENT).times(token1.ethPrice)
+  exPair.twoPercentMarketDepthUSD = exPair.twoPercentMarketDepthETH.times(ethUsdPrice)
 
   // get tracked liquidity - will be 0 if neither is in whitelist
   let trackedLiquidityETH: BigDecimal
   if (ethUsdPrice.notEqual(BIGDECIMAL_ZERO)) {
-    trackedLiquidityETH = getTrackedLiquidityUSD(pair.reserve0, token0 as Token, pair.reserve1, token1 as Token).div(
+    trackedLiquidityETH = getTrackedLiquidityUSD(exPair.reserve0, token0 as Token, exPair.reserve1, token1 as Token).div(
       ethUsdPrice
     )
   } else {
@@ -123,18 +123,18 @@ export function updateEthBasedPrices(token0: Token, token1: Token, pair: Exchang
   exchange.totalLiquidityETH = exchange.totalLiquidityETH.plus(trackedLiquidityETH)
   exchange.totalLiquidityUSD = exchange.totalLiquidityETH.times(ethUsdPrice)
 
-  pair.trackedReserveETH = trackedLiquidityETH
-  pair.reserveETH = pair.reserve0
+  exPair.trackedReserveETH = trackedLiquidityETH
+  exPair.reserveETH = exPair.reserve0
     .times(token0.ethPrice as BigDecimal)
-    .plus(pair.reserve1.times(token1.ethPrice as BigDecimal))
-  pair.reserveUSD = pair.reserveETH.times(ethUsdPrice)
+    .plus(exPair.reserve1.times(token1.ethPrice as BigDecimal))
+  exPair.reserveUSD = exPair.reserveETH.times(ethUsdPrice)
 
   // now correctly set liquidity amounts for each token
-  token0.totalLiquidity = token0.totalLiquidity.plus(pair.reserve0)
-  token1.totalLiquidity = token1.totalLiquidity.plus(pair.reserve1)
+  token0.totalLiquidity = token0.totalLiquidity.plus(exPair.reserve0)
+  token1.totalLiquidity = token1.totalLiquidity.plus(exPair.reserve1)
 
   // save entities
-  pair.save()
+  exPair.save()
   exchange.save()
   token0.save()
   token1.save()
