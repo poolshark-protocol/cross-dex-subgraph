@@ -10,7 +10,6 @@ type Exchange @entity {
 
   # pair info
   pairCount: Int!
-  pairs: [Pair!]!
 }
 
 # stores for USD calculations
@@ -43,7 +42,7 @@ type Token @entity {
   usdPrice: BigDecimal!
   
   pairs: [Pair!]!
-  exchangeTokens: [ExchangeToken!]!
+  exchanges: [Exchange!]!
 
   # token specific volume
   #tradeVolume: BigDecimal!
@@ -53,6 +52,66 @@ type Token @entity {
   totalLiquidity: BigDecimal!
   #totalLiquidityETH: BigDecimal!
   #totalLiquidityUSD: BigDecimal!
+}
+
+type ExchangeToken @entity {
+  # token address + factory address
+  id: ID!
+
+  exchange: Exchange!
+  token: Token!
+
+  # mirrored from the smart contract
+  symbol: String!
+  name: String!
+  decimals: BigInt!
+
+  # price
+  ethPrice: BigDecimal!
+  usdPrice: BigDecimal!
+  
+  exchangePairs: [ExchangePair!]!
+
+  # token specific volume
+  #tradeVolume: BigDecimal!
+  #tradeVolumeUSD: BigDecimal!
+
+  # liquidity across all pairs
+  totalLiquidity: BigDecimal!
+  
+}
+
+type Pair @entity {
+  # tknA < tknB
+  id: ID!
+
+  # mirrored from the smart contract
+  token0: Token!
+  token1: Token!
+  reserve0: BigDecimal!
+  reserve1: BigDecimal!
+
+  # derived liquidity
+  reserveETH: BigDecimal!
+  reserveUSD: BigDecimal!
+
+  exchanges: [Exchange!]!
+  exchangePairs: [ExchangePair!]!
+
+  # Price in terms of the asset pair
+  token0Price: BigDecimal!
+  token1Price: BigDecimal!
+
+  # lifetime volume stats
+  # token0Volume: BigDecimal!
+  # token1Volume: BigDecimal!
+
+    # creation stats
+  createdAtTimestamp: BigInt!
+  createdAtBlockNumber: BigInt!
+  
+  updatedAtTimestamp: BigInt!
+  updatedAtBlockNumber: BigInt!
 }
 
 type ExchangePair @entity {
@@ -86,65 +145,6 @@ type ExchangePair @entity {
   #volumeUSD: BigDecimal!
 
   # creation stats
-  createdAtTimestamp: BigInt!
-  createdAtBlockNumber: BigInt!
-  
-  updatedAtTimestamp: BigInt!
-  updatedAtBlockNumber: BigInt!
-
-  # list of all swap for the pair
-  swaps: [Swap!]!
-}
-
-type ExchangeToken @entity {
-  # token address + factory address
-  id: ID!
-
-  # mirrored from the smart contract
-  symbol: String!
-  name: String!
-  decimals: BigInt!
-
-  # price
-  ethPrice: BigDecimal!
-  
-  exchangePairs: [ExchangePair!]!
-
-  # token specific volume
-  #tradeVolume: BigDecimal!
-  #tradeVolumeUSD: BigDecimal!
-
-  # liquidity across all pairs
-  totalLiquidity: BigDecimal!
-  
-}
-
-
-type Pair @entity {
-  # tknA < tknB
-  id: ID!
-
-  # mirrored from the smart contract
-  token0: Token!
-  token1: Token!
-  reserve0: BigDecimal!
-  reserve1: BigDecimal!
-
-  # derived liquidity
-  reserveETH: BigDecimal!
-  reserveUSD: BigDecimal!
-
-  exchangePairs: [ExchangePair!]!
-
-  # Price in terms of the asset pair
-  token0Price: BigDecimal!
-  token1Price: BigDecimal!
-
-  # lifetime volume stats
-  # token0Volume: BigDecimal!
-  # token1Volume: BigDecimal!
-
-    # creation stats
   createdAtTimestamp: BigInt!
   createdAtBlockNumber: BigInt!
   

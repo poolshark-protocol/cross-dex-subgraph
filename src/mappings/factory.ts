@@ -24,6 +24,8 @@ export function handleNewUniswapV2Pair(event: PairCreated): void {
 
   // load entities; create if doesn't exist
   let loadExchange = safeLoadExchange(factoryAddress)
+  // token0 and token1 must be lexographically sorted already
+  // true for Uniswap v2/v3 and Sushiswap
   let loadPair = safeLoadPair(token0Param, token1Param)
   let loadExPair = safeLoadExchangePair(pairParam)
   let loadToken0 = safeLoadToken(token0Param)
@@ -40,11 +42,14 @@ export function handleNewUniswapV2Pair(event: PairCreated): void {
   let exToken0 = loadExchangeToken0.entity
   let exToken1 = loadExchangeToken1.entity
 
-  // create ethUsdPrice data if doesn't exist
+  // Exchange updates
+  exchange.pairCount = exchange.pairCount + 1
+
+  // Bundle create
   if (!loadExchange.exists) {
     //TODO: fix for multi dex
-    // create new bundle
-    let loadBundle = safeLoadBundle('ethUsdPrice')
+    // create new bundle for each
+    let loadBundle = safeLoadBundle('ethUsdPrice',factoryAddress)
     if(!loadBundle.exists){
       let ethUsdPrice = loadBundle.entity
       ethUsdPrice.value = BIGDECIMAL_ZERO
@@ -52,44 +57,67 @@ export function handleNewUniswapV2Pair(event: PairCreated): void {
     }
   }
   
-  // add exchange tokens to tokens list if not exist
-  let token0Exchanges = token0.exchangeTokens;
-  if(!token0Exchanges.includes(exToken0.id)){
-    token0Exchanges.push(exToken0.id);
-    token0.exchangeTokens = token0Exchanges;
+  // Token updates
+
+  // pairs
+  let token0Pairs = token0.pairs;
+  token0Pairs.push(pair.id)
+  token0.pairs = token0Pairs
+  let token1Pairs = token1.pairs;
+  token1Pairs.push(pair.id)
+  token1.pairs = token1Pairs
+  // exhcanges
+  let token0Exchanges = token0.exchanges;
+  if(!token0Exchanges.includes(exToken0.exchange)){
+    token0Exchanges.push(exchange.id);
+    token0.exchanges = token0Exchanges;
+  }
+  let token1Exchanges = token1.exchanges;
+  if(!token1Exchanges.includes(exToken1.exchange)){
+    token1Exchanges.push(exToken1.exchange);
+    token1.exchanges = token1Exchanges;
   }
 
-  let token1Exchanges = token1.exchangeTokens;
-  if(!token1Exchanges.includes(exToken1.id)){
-    token1Exchanges.push(exToken1.id);
-    token1.exchangeTokens = token1Exchanges;
-  }
+  // ExchangeToken updates
+  exToken0.exchange = exchange.id
+  exToken1.exchange = exchange.id
+  exToken0.token = token0.id
+  exToken1.token = token1.id
+  // exchangePairs
+  let exToken0Pairs = exToken0.exchangePairs;
+  exToken0Pairs.push(exPair.id);
+  exToken0.exchangePairs = exToken0Pairs;
+  let exToken1Pairs = exToken1.exchangePairs;
+  exToken1Pairs.push(exPair.id);
+  exToken1.exchangePairs = exToken1Pairs;
 
-  exchange.pairCount = exchange.pairCount + 1
-  exchange.save()
-
-  exPair.token0 = token0.id
-  exPair.token1 = token1.id
-  exPair.exchange = event.address.toHex()
-  exPair.createdAtTimestamp = event.block.timestamp
-  exPair.createdAtBlockNumber = event.block.number
-  exPair.updatedAtTimestamp = event.block.timestamp
-  exPair.updatedAtBlockNumber = event.block.number
-
+  // Pair updates
   pair.token0 = token0.id
   pair.token1 = token1.id
-
-  // first time this pair exists so we push every time
-  let pairExchanges = pair.exchangePairs
-  pairExchanges.push(exPair.id)
-  pair.exchangePairs = pairExchanges
-
+  // exchhanges
+  let pairExchanges = pair.exchanges
+  pairExchanges.push(exchange.id)
+  pair.exchanges = pairExchanges
+  // exchangePairs
+  let pairExchangePairs = pair.exchangePairs
+  pairExchangePairs.push(exPair.id)
+  pair.exchangePairs = pairExchangePairs
+  // timestamps
   pair.createdAtTimestamp = event.block.timestamp
   pair.createdAtBlockNumber = event.block.number
   pair.updatedAtTimestamp = event.block.timestamp
   pair.updatedAtBlockNumber = event.block.number
 
-  // create the tracked contract based on the template
+  // ExchangePair updates
+  exPair.exchange = event.address.toHex()
+  exPair.token0 = token0.id
+  exPair.token1 = token1.id
+  exPair.createdAtTimestamp = event.block.timestamp
+  exPair.createdAtBlockNumber = event.block.number
+  exPair.updatedAtTimestamp = event.block.timestamp
+  exPair.updatedAtBlockNumber = event.block.number
+
+  // launch template to track Sync events
   UniswapV2PairTemplate.create(event.params.pair)
 
   // save updated values

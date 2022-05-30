@@ -1,6 +1,6 @@
 /* eslint-disable prefer-const */
 import { BigInt, BigDecimal, store, Address, log } from '@graphprotocol/graph-ts'
-import { findEthPerExchangeToken, findEthPerToken, getEthPriceInUSD, getTrackedLiquidityUSD, getTrackedVolumeUSD } from '../utils/pricing'
+import { findEthPerExchangeToken, findEthPerToken, findUsdPerExchangeToken, getEthPriceInUSD, getExchangeTrackedLiquidityUSD, getExchangeTrackedVolumeUSD } from '../utils/pricing'
 import {
   Pair,
   Token,
@@ -8,7 +8,8 @@ import {
   Transaction,
   Bundle,
   ExchangePair,
-  Swap as SwapEvent
+  Swap as SwapEvent,
+  ExchangeToken
 } from '../../generated/schema'
 import { 
   Pair as PairContract, 
@@ -63,6 +64,13 @@ export function handleSync(event: Sync): void {
   exToken0.totalLiquidity = exToken0.totalLiquidity.minus(exPair.reserve0)
   exToken1.totalLiquidity = exToken1.totalLiquidity.minus(exPair.reserve1)
 
+  pair.reserve0 = pair.reserve0.minus(exPair.reserve0)
+  pair.reserve1 = pair.reserve1.minus(exPair.reserve1)
+  pair.reserveETH = pair.reserveETH.minus(exPair.reserveETH)
+  pair.reserveUSD = pair.reserveUSD.minus(exPair.reserveUSD)
+  exPair.updatedAtTimestamp = event.block.timestamp
+  exPair.updatedAtBlockNumber = event.block.number
+
   exPair.reserve0 = convertTokenToDecimal(event.params.reserve0, exToken0.decimals)
   exPair.reserve1 = convertTokenToDecimal(event.params.reserve1, exToken1.decimals)
   exPair.updatedAtTimestamp = event.block.timestamp
@@ -77,14 +85,14 @@ export function handleSync(event: Sync): void {
 
   exPair.save()
 
-  let ethUsdPrice = updateEthUsdPrice()
+  let ethUsdPrice = updateEthUsdPrice(exchange.id)
 
-  updateEthBasedPrices(token0 as Token, token1 as Token, exPair as ExchangePair, exchange, ethUsdPrice)
+  updateEthBasedPrices(exToken0, exToken1, token0, token1, exPair, exchange, ethUsdPrice)
 
 }
 
-export function updateEthUsdPrice(): BigDecimal {
-  let loadBundle = safeLoadBundle('ethUsdPrice')
+export function updateEthUsdPrice(factoryAddress: string): BigDecimal {
+  let loadBundle = safeLoadBundle('ethUsdPrice', factoryAddress)
   if(!loadBundle.exists){
     //throw some error
   }
@@ -96,23 +104,25 @@ export function updateEthUsdPrice(): BigDecimal {
   return ethUsdPrice.value
 }
 
-export function updateEthBasedPrices(token0: Token, token1: Token, exPair: ExchangePair, exchange: Exchange, ethUsdPrice: BigDecimal): void {
-  token0.ethPrice = findEthPerExchangeToken(token0 as Token)
-  token1.ethPrice = findEthPerExchangeToken(token1 as Token)
+export function updateEthBasedPrices(exToken0: ExchangeToken, exToken1: ExchangeToken, token0: Token, token1: Token, exPair: ExchangePair, exchange: Exchange, ethUsdPrice: BigDecimal): void {
+  exToken0.ethPrice = findEthPerExchangeToken(exToken0)
+  exToken1.ethPrice = findEthPerExchangeToken(exToken1)
   ///get exchange tokens and update prices
-  token0.usdPrice = token0.ethPrice.times(ethUsdPrice)
-  token1.usdPrice = token1.usdPrice.times(ethUsdPrice)
+  exToken0.usdPrice = findUsdPerExchangeToken(exToken0, ethUsdPrice)
+  exToken1.usdPrice = findUsdPerExchangeToken(exToken1, ethUsdPrice)
   //also update weighted average prices
-  token0.save()
-  token1.save()
+  exToken0.save()
+  exToken1.save()
 
-  exPair.twoPercentMarketDepthETH = exPair.reserve1.times(BIGDECIMAL_ONE_PERCENT).times(token1.ethPrice)
+  token0.ethPrice = findEthPerToken(token0)
+
+  exPair.twoPercentMarketDepthETH = exPair.reserve1.times(BIGDECIMAL_ONE_PERCENT).times(exToken1.ethPrice)
   exPair.twoPercentMarketDepthUSD = exPair.twoPercentMarketDepthETH.times(ethUsdPrice)
 
   // get tracked liquidity - will be 0 if neither is in whitelist
   let trackedLiquidityETH: BigDecimal
   if (ethUsdPrice.notEqual(BIGDECIMAL_ZERO)) {
-    trackedLiquidityETH = getTrackedLiquidityUSD(exPair.reserve0, token0 as Token, exPair.reserve1, token1 as Token).div(
+    trackedLiquidityETH = getExchangeTrackedLiquidityUSD(exPair.reserve0, exToken0, exPair.reserve1, exToken1).div(
       ethUsdPrice
     )
   } else {
@@ -125,17 +135,17 @@ export function updateEthBasedPrices(token0: Token, token1: Token, exPair: Excha
 
   exPair.trackedReserveETH = trackedLiquidityETH
   exPair.reserveETH = exPair.reserve0
-    .times(token0.ethPrice as BigDecimal)
-    .plus(exPair.reserve1.times(token1.ethPrice as BigDecimal))
+    .times(exToken0.ethPrice as BigDecimal)
+    .plus(exPair.reserve1.times(exToken1.ethPrice as BigDecimal))
   exPair.reserveUSD = exPair.reserveETH.times(ethUsdPrice)
 
   // now correctly set liquidity amounts for each token
-  token0.totalLiquidity = token0.totalLiquidity.plus(exPair.reserve0)
-  token1.totalLiquidity = token1.totalLiquidity.plus(exPair.reserve1)
+  exToken0.totalLiquidity = exToken0.totalLiquidity.plus(exPair.reserve0)
+  exToken1.totalLiquidity = exToken1.totalLiquidity.plus(exPair.reserve1)
 
   // save entities
   exPair.save()
   exchange.save()
-  token0.save()
-  token1.save()
+  exToken0.save()
+  exToken1.save()
 }

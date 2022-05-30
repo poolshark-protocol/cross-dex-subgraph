@@ -16,13 +16,13 @@ class LoadBundleRet {
     entity: Bundle;
     exists: boolean;
 }
-export function safeLoadBundle(id: string): LoadBundleRet {
+export function safeLoadBundle(value: string, factoryAddress: string): LoadBundleRet {
     let exists = true;
 
-    let bundleEntity = Bundle.load(id);
+    let bundleEntity = Bundle.load(value.concat(factoryAddress));
 
     if (!bundleEntity) {
-        bundleEntity = new Bundle(id);
+        bundleEntity = new Bundle(value.concat(factoryAddress));
 
         bundleEntity.value = BIGDECIMAL_ZERO;
         
@@ -39,20 +39,18 @@ class LoadExchangeRet {
     entity: Exchange;
     exists: boolean;
 };
-export function safeLoadExchange(id: string): LoadExchangeRet {
+export function safeLoadExchange(factoryAddress: string): LoadExchangeRet {
     let exists = true;
 
-    let exchangeEntity = Exchange.load(id);
+    let exchangeEntity = Exchange.load(factoryAddress);
 
     if (!exchangeEntity) {
-        exchangeEntity = new Exchange(id);
+        exchangeEntity = new Exchange(factoryAddress);
 
         exchangeEntity.totalLiquidityETH = BIGDECIMAL_ZERO;
         exchangeEntity.totalLiquidityUSD = BIGDECIMAL_ZERO;
         //exchangeEntity.totalVolumeETH = BIGDECIMAL_ZERO;
-        exchangeEntity.totalLiquidityUSD = BIGDECIMAL_ZERO;
         exchangeEntity.pairCount = 0;
-        exchangeEntity.pairs = new Array<string>();
 
         exists = false;
     }
@@ -106,7 +104,7 @@ export function safeLoadExchangePair(id: string): LoadExchangePairRet {
     }
 }
 
-class LoadPairRet {
+export class LoadPairRet {
     entity: Pair
     exists: boolean
 }
@@ -121,6 +119,7 @@ export function safeLoadPair(token0: string, token1: string): LoadPairRet {
         pairEntity = new Pair(id);
 
         pairEntity.exchangePairs = new Array<string>();
+        pairEntity.exchanges = new Array<string>();
 
         //TODO: set these values based on the contract
         pairEntity.token0 = ADDRESS_ZERO;
@@ -220,7 +219,7 @@ export function safeLoadToken(address: string): LoadTokenRet {
 
         tokenEntity.ethPrice = BIGDECIMAL_ZERO;
         tokenEntity.pairs = new Array<string>();
-        tokenEntity.exchangeTokens = new Array<string>();
+        tokenEntity.exchanges = new Array<string>();
 
         //tokenEntity.tradeVolume = BIGDECIMAL_ZERO;
 
