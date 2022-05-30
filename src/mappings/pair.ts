@@ -180,18 +180,3 @@ export function getExchangePairTrackedLiquidityETH(ethUsdPrice: BigDecimal, exPa
     }
     return trackedLiquidityETH
 }
-
-
-export function updateEthBasedPrices(exToken0: ExchangeToken, exToken1: ExchangeToken, token0: Token, token1: Token, exPair: ExchangePair, exchange: Exchange, ethUsdPrice: BigDecimal): void {
-
-  //also update weighted average prices
-
-
-
-  
-
-
-
-
-
-}
