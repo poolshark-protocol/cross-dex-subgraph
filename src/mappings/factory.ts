@@ -66,7 +66,7 @@ export function handleNewUniswapV2Pair(event: PairCreated): void {
   let token1Pairs = token1.pairs;
   token1Pairs.push(pair.id)
   token1.pairs = token1Pairs
-  // exhcanges
+  // exchanges
   let token0Exchanges = token0.exchanges;
   if(!token0Exchanges.includes(exToken0.exchange)){
     token0Exchanges.push(exchange.id);

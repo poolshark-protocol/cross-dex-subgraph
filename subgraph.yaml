@@ -21,9 +21,10 @@ dataSources:
       file: ./src/mappings/factory.ts
       entities:
         - Pair
-        - Token
         - ExchangePair
+        - Token
         - ExchangeToken
+        - Exchange
         - Bundle
       abis:
         - name: Factory
@@ -51,7 +52,12 @@ dataSources:
       language: wasm/assemblyscript
       file: ./src/mappings/factory.ts
       entities:
-        - Factory
+        - Pair
+        - ExchangePair
+        - Token
+        - ExchangeToken
+        - Exchange
+        - Bundle
       abis:
         - name: Factory
           file: ./abis/factory.json
@@ -78,11 +84,11 @@ templates:
       language: wasm/assemblyscript
       file: ./src/mappings/pair.ts
       entities:
-        - Exchange
-        - ExchangeToken
+        - Pair
         - ExchangePair
         - Token
-        - Pair
+        - ExchangeToken
+        - Exchange
         - Bundle
       abis:
         - name: Pair

@@ -1,11 +1,14 @@
 /* eslint-disable prefer-const */
-import { Pair, Token, Bundle, ExchangePair, ExchangeToken } from '../../generated/schema'
-import { BigDecimal, Address, BigInt } from '@graphprotocol/graph-ts/index'
-import { factoryContract, ADDRESS_ZERO, BIGDECIMAL_ONE, UNTRACKED_PAIRS } from '../utils/helpers'
+import { Pair, Token, Bundle, ExchangePair, ExchangeToken, Exchange } from '../../generated/schema'
+import { BigDecimal, Address, BigInt, log } from '@graphprotocol/graph-ts/index'
+import { factoryContract, ADDRESS_ZERO, BIGDECIMAL_ONE, UNTRACKED_PAIRS, fetchTokenName } from '../utils/helpers'
 import { FACTORY_ADDRESS, BIGINT_ONE, BIGDECIMAL_ZERO, BIGINT_ZERO } from '../utils/helpers'
-import { LoadPairRet, safeLoadBundle, safeLoadExchangePair, safeLoadExchangeToken, safeLoadPair, safeLoadToken } from './loads'
+import { LoadExchangePairRet, LoadPairRet, safeFindAndLoadExchangePair, safeLoadBundle, safeLoadExchangePair, safeLoadExchangeToken, safeLoadPair, safeLoadToken } from './loads'
 
 const WETH_ADDRESS = '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2'
+const USDC_ADDRESS = '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48'
+const DAI_ADDRESS  = '0x6b175474e89094c44da98b954eedeac495271d0f'
+const USDT_ADDRESS = '0xdac17f958d2ee523a2206206994597c13d831ec7'
 const USDC_WETH_PAIR = '0xb4e16d0168e52d35cacd2c6185b44281ec28c9dc' // created 10008355
 const DAI_WETH_PAIR = '0xa478c2975ab1ea89e8196811f51a7b7ade33eb11' // created block 10042267
 const USDT_WETH_PAIR = '0x0d4a11d5eeaac28ec3f61d100daf4d40471f1852' // created block 10093341
@@ -13,9 +16,9 @@ const USDT_WETH_PAIR = '0x0d4a11d5eeaac28ec3f61d100daf4d40471f1852' // created b
 export function getEthPriceInUSD(): BigDecimal {
   // fetch eth prices for each stablecoin
   //TODO: can instead get all stablecoin pairs for all exchanges
-  let loadDaiPair = safeLoadExchangePair(DAI_WETH_PAIR) // dai is token0
-  let loadUsdcPair = safeLoadExchangePair(USDC_WETH_PAIR) // usdc is token0
-  let loadUsdtPair = safeLoadExchangePair(USDT_WETH_PAIR) // usdt is token1
+  let loadDaiPair = safeLoadPair(DAI_ADDRESS, WETH_ADDRESS) // dai is token0
+  let loadUsdcPair = safeLoadPair(USDC_ADDRESS, WETH_ADDRESS) // usdc is token0
+  let loadUsdtPair = safeLoadPair(WETH_ADDRESS, USDT_ADDRESS) // usdt is token1
 
   let daiPair = loadDaiPair.entity
   let usdcPair = loadUsdcPair.entity
@@ -77,23 +80,20 @@ let MINIMUM_LIQUIDITY_THRESHOLD_ETH = BigDecimal.fromString('2')
 
 /**
  * Search through graph to find derived Eth per token.
- * @todo update to be derived ETH (add stablecoin estimates)
  **/
-export function findEthPerToken(token: Token): BigDecimal {
+export function findEthPerToken(token: Token, exToken: ExchangeToken): BigDecimal {
   if (token.id == WETH_ADDRESS) {
     return BIGDECIMAL_ONE
   }
   // loop through whitelist and check if paired with any
   let ethPrice = BIGDECIMAL_ZERO
-  for (let i = 0; i < token.exchanges.length; ++i) {
-    let loadExToken = safeLoadExchangeToken(token.id, token.exchanges[i]);
-    if(!loadExToken.exists){
-      //throw some error
-    }
-    let exToken = loadExToken.entity;
-    let weightedEthPrice = exToken.ethPrice.times(exToken.totalLiquidity.div(token.totalLiquidity))
-    ethPrice.plus(weightedEthPrice)
-  }
+
+  let totalLiquidity = token.totalLiquidity.plus(exToken.totalLiquidity)
+  let percentTokenLiquidity = token.totalLiquidity.div(totalLiquidity)
+  let percentExTokenLiquidity = exToken.totalLiquidity.div(totalLiquidity)
+
+  ethPrice = (token.ethPrice.times(percentTokenLiquidity)).plus((exToken.ethPrice.times(percentExTokenLiquidity)))
+
   return ethPrice
 }
 
@@ -113,49 +113,45 @@ export function findEthPerExchangeToken(exToken: ExchangeToken): BigDecimal {
 
     // load Pair entity based on ordering and find the one for this exchange
     let tokenOrder = exToken.token.localeCompare(WHITELIST[i]);
-    let loadPair: LoadPairRet;
-    if(tokenOrder == -1){
-      loadPair = safeLoadPair(exToken.token, WHITELIST[i])
-    }
-    else if(tokenOrder == 1){
-      loadPair = safeLoadPair(WHITELIST[i], exToken.token)
-    }
-    let pair = loadPair.entity;
 
-    // find matching exchange for exToken
-    let exchangePairIdx = -1;
-    for(let j =0; j < pair.exchanges.length; ++j){
-      if( pair.exchanges[j] == exToken.exchange){
-        exchangePairIdx = j
-        break
-      }
+    let loadExPair: LoadExchangePairRet;
+    if(tokenOrder < 0){
+      loadExPair = safeFindAndLoadExchangePair(exToken.token, WHITELIST[i], exToken.exchange)
     }
+    else if(tokenOrder > 0){
+      loadExPair = safeFindAndLoadExchangePair(WHITELIST[i], exToken.token, exToken.exchange)
+    }
+    else {
+      // continue because it matches the whitelisted token
+      continue
+    }
+
+    if(!loadExPair.exists){
+      continue
+    }
+
+    let exPair = loadExPair.entity;
+
+    log.info("token0: {}\ntoken1: {}\ntokenOrder: {}",[exPair.token0, exPair.token1, tokenOrder.toString()])
 
     //if ExchangePair exists
-    if (exchangePairIdx != -1) {
-      // load the ExchangePair
-      let loadExPair = safeLoadExchangePair(pair.exchangePairs[exchangePairIdx])
-      if(!loadExPair.exists){
+    // return price based on ExchangePair and ExchangeToken
+    log.info("exPair.token0: {}\nexPair.token1: {}\nexToken.token: {}\nexPair.reserveETH: {}",[exPair.token0, exPair.token1, exToken.token, exPair.reserveETH.toString()])
+    if (exPair.token0 == exToken.token && exPair.reserveETH.gt(MINIMUM_LIQUIDITY_THRESHOLD_ETH)) {
+      let loadExToken1 = safeLoadExchangeToken(exPair.token1, exPair.exchange)
+      if(!loadExToken1.exists){
         //throw some error
       }
-      let exPair = loadExPair.entity
-      // return price based on ExchangePair and ExchangeToken
-      if (exPair.token0 == exToken.id && exPair.reserveETH.gt(MINIMUM_LIQUIDITY_THRESHOLD_ETH)) {
-        let loadExToken1 = safeLoadExchangeToken(exPair.token1, exPair.exchange)
-        if(!loadExToken1.exists){
-          //throw some error
-        }
-        let exToken1 = loadExToken1.entity
-        return exPair.token1Price.times(exToken1.ethPrice as BigDecimal) // return token1 per our token * Eth per token 1
+      let exToken1 = loadExToken1.entity
+      return exPair.token1Price.times(exToken1.ethPrice as BigDecimal) // return token1 per our token * Eth per token 1
+    }
+    if (exPair.token1 == exToken.token && exPair.reserveETH.gt(MINIMUM_LIQUIDITY_THRESHOLD_ETH)) {
+      let loadExToken0 = safeLoadExchangeToken(exPair.token0, exPair.exchange)
+      if(!loadExToken0.exists){
+        //throw some error
       }
-      if (exPair.token1 == exToken.id && exPair.reserveETH.gt(MINIMUM_LIQUIDITY_THRESHOLD_ETH)) {
-        let loadExToken0 = safeLoadExchangeToken(exPair.token0, exPair.exchange)
-        if(!loadExToken0.exists){
-          //throw some error
-        }
-        let exToken0 = loadExToken0.entity
-        return exPair.token0Price.times(exToken0.ethPrice as BigDecimal) // return token0 per our token * ETH per token 0
-      }
+      let exToken0 = loadExToken0.entity
+      return exPair.token0Price.times(exToken0.ethPrice as BigDecimal) // return token0 per our token * ETH per token 0
     }
   }
   return BIGDECIMAL_ZERO // nothing was found return 0
@@ -257,17 +253,17 @@ export function getExchangeTrackedLiquidityUSD(
   let price1 = exToken1.ethPrice.times(ethUsdPrice.value)
 
   // both are whitelist tokens, take average of both amounts
-  if (WHITELIST.includes(exToken0.id) && WHITELIST.includes(exToken1.id)) {
+  if (WHITELIST.includes(exToken0.token) && WHITELIST.includes(exToken1.token)) {
     return exTokenAmount0.times(price0).plus(exTokenAmount1.times(price1))
   }
 
   // take double value of the whitelisted token amount
-  if (WHITELIST.includes(exToken0.id) && !WHITELIST.includes(exToken1.id)) {
+  if (WHITELIST.includes(exToken0.token) && !WHITELIST.includes(exToken1.token)) {
     return exTokenAmount0.times(price0).times(BigDecimal.fromString('2'))
   }
 
   // take double value of the whitelisted token amount
-  if (!WHITELIST.includes(exToken0.id) && WHITELIST.includes(exToken1.id)) {
+  if (!WHITELIST.includes(exToken0.token) && WHITELIST.includes(exToken1.token)) {
     return exTokenAmount1.times(price1).times(BigDecimal.fromString('2'))
   }
 

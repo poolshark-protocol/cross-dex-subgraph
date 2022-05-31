@@ -61,7 +61,7 @@ export function safeLoadExchange(factoryAddress: string): LoadExchangeRet {
     }
 }
 
-class LoadExchangePairRet {
+export class LoadExchangePairRet {
     entity: ExchangePair;
     exists: boolean;
 };
@@ -102,6 +102,28 @@ export function safeLoadExchangePair(id: string): LoadExchangePairRet {
         entity: exchangePairEntity,
         exists: exists
     }
+}
+
+export function safeFindAndLoadExchangePair(token0: string, token1: string, factoryAddress: string): LoadExchangePairRet {
+    let loadPair = safeLoadPair(token0, token1)
+
+    if(!loadPair.exists){
+        return {
+            entity: safeLoadExchangePair("").entity,
+            exists: false
+        }
+    }
+
+    let pair = loadPair.entity
+    let exchangeIdx = 0;
+
+    for(; exchangeIdx < pair.exchanges.length; ++exchangeIdx){
+        if(pair.exchanges[exchangeIdx] == factoryAddress){
+            break
+        }
+    }
+    // // not found
+    return safeLoadExchangePair(pair.exchangePairs[exchangeIdx])
 }
 
 export class LoadPairRet {
